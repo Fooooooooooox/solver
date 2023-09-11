@@ -26,7 +26,7 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
 
   console.log('this is chain ', chain)
   console.log('this is chain ', typeof chain)
-  console.log('this is chain ', chain === 137)
+  console.log('this is chain ', chain == 137)
   const context = classifier.classify(currentStep);
   console.log('step context ', context);
 
@@ -66,6 +66,8 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
       userAddress,
       chain
     };
+
+    console.log('this is swap transaction meta ', swapTransactionMeta)
 
     const resp = await constructSwapTransaction(swapTransactionMeta);
     console.log(' this is resp ', resp);

@@ -3,7 +3,7 @@ const { ethers } = require('ethers')
 const SPENDER_1INCH = '0x1111111254eeb25477b68fb85ed929f73a960582' // by default approval would go to this address
 
 const approveUrl = (chain) => `https://api.1inch.io/v5.0/${chain}/approve/transaction`;
-const swapUrl = (chain) => `https://api.1inch.io/v5.0/${chain}/swap`;
+const swapUrl = (chain) => `https://api.1inch.dev/swap/v5.2/${chain}/swap`;
 
 const isERC20 = (token) => token === 'USDC' || token === 'USDT';
 
@@ -19,20 +19,26 @@ const constructNormalSwapTransaction = async (swapData) => {
   let transactions = [];
 
   const chain = swapData.chain;
+  console.log('this is chain ', chain);
+  console.log("this is swap url: ", swapUrl(chain)) 
     // swap transction
   let swapTransactionResp = await Axios.get(swapUrl(chain), {
     params: {
-      fromTokenAddress: swapData.tokenAddress1,
-      toTokenAddress: swapData.tokenAddress2,
+      src: swapData.tokenAddress1,
+      dst: swapData.tokenAddress2,
       amount: ethers.utils
       .parseUnits(swapData.amount, 18)
       .toString(),
-      fromAddress: swapData.userAddress,
-      slippage: 5, // hardcoding it for now
+      from: swapData.userAddress,
+      slippage: 1, // hardcoding it for now
       disableEstimate: true,
-      destReceiver: swapData.userAddress
-    }
+    },
+    headers: {
+      accept: 'application/json',
+      Authorization: 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm',
+    },
   });
+  // console.log("here we are , this is swapTransactionResp data: ", swapTransactionResp.data)
 
   const swapTxn = {
     to: swapTransactionResp.data.tx.to,
@@ -41,8 +47,9 @@ const constructNormalSwapTransaction = async (swapData) => {
   }
 
   transactions.push(swapTxn);
+  console.log("this is transactions: ", transactions)
 
-  console.log('thesre are txns ', transactions)
+  console.log("thesre are txns ", transactions)
 
   return {
     success: true,
