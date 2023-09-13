@@ -153,13 +153,13 @@ const constructERC20SwapTransaction = async (swapData) => {
   });
 
   console.log("this is approval txn resp: ", approvalTxnResp.data)
-  transactions.push(
-    {
-      to: approvalTxnResp.data.tx.to,
-      value: approvalTxnResp.data.tx.value,
-      data: approvalTxnResp.data.tx.data
-    }
-  );
+  // transactions.push(
+  //   {
+  //     to: approvalTxnResp.data.tx.to,
+  //     value: approvalTxnResp.data.tx.value,
+  //     data: approvalTxnResp.data.tx.data
+  //   }
+  // );
 
   transactions.push(
     {
