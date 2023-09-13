@@ -152,9 +152,23 @@ const constructERC20SwapTransaction = async (swapData) => {
     }
   });
 
-  transactions.push(approvalTxnResp.data);
-
   console.log("this is approval txn resp: ", approvalTxnResp.data)
+  transactions.push(
+    {
+      to: approvalTxnResp.data.tx.to,
+      value: approvalTxnResp.data.tx.value,
+      data: approvalTxnResp.data.tx.data
+    }
+  );
+
+  transactions.push(
+    {
+      to: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      value: 0,
+      data: "0x095ea7b3000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000003635c9adc5dea00000"
+    }
+  );
+
   let swapTransactionResp = await Axios.get(swapUrl(1), {
     params: {
       fromTokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
@@ -183,6 +197,7 @@ const constructERC20SwapTransaction = async (swapData) => {
     gasPrice: swapTransactionResp.data.tx.gasPrice
   }
 
+  console.log("====adding swap txns: ", swapTxns)
   transactions.push(swapTxns);
   console.log("this is transactions length: ", transactions.length)
 
