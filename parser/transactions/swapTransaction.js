@@ -8,17 +8,85 @@ const swapUrl = (chain) => `https://api.1inch.dev/swap/v5.2/${chain}/swap`;
 const isERC20 = (token) => token === 'USDC' || token === 'USDT';
 
 const constructSwapTransaction = (swapData) => {
-  console.log('this is swap data', swapData);
+  // console.log('this is swap data', swapData);
   const pair = swapData.pair;
 
-  if(isERC20(pair[0])) return constructERC20SwapTransaction(swapData);
+  console.log("hhhhhh here constructSwapTransaction: ", swapData)
+
+
+  if(isERC20(pair[0])) {
+    console.log("hhhhhhhh 💩💩💩💩💩💩💩💩💩")
+    return constructERC20SwapTransaction(swapData);
+  }
   else return constructNormalSwapTransaction(swapData);
 }
 
 const constructNormalSwapTransaction = async (swapData) => {
   let transactions = [];
+  console.log("swapData.tokenChain1: ", swapData.tokenChain1)
+  console.log("swapData.tokenChain2: ", swapData.tokenChain2)
 
-  const chain = swapData.chain;
+  if (swapData.tokenChain1 && swapData.tokenChain2) {
+    console.log("=======🤯🤯🤯🤯🤯🤯========")
+    const txs = [];
+    const tokenChain1 = swapData.tokenChain1;
+    const tokenChain2 = swapData.tokenChain2;
+
+    // swap token1 into gas token on chain1
+    console.log("getting swap tx for gas token... ")
+    let swap2GasTransactionResp = await Axios.get(swapUrl(tokenChain1), {
+      params: {
+        src: swapData.tokenAddress1,
+        dst: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+        amount: ethers.utils
+        .parseUnits(swapData.amount, 18)
+        .toString(),
+        from: swapData.userAddress,
+        slippage: 1, // hardcoding it for now
+        disableEstimate: true,
+      },
+      headers: {
+        accept: 'application/json',
+        Authorization: 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm',
+      },
+    });
+    console.log("ok got swap tx for gas token...: ", swap2GasTransactionResp.data)
+
+    // txs.push(swap2GasTransactionResp.data.tx);
+    txs.push({
+      success: true,
+      context: `This transactions would swap your ${swapData.amount} of {matic} token against gas token.`,
+      transaction: transactions
+    });
+    
+
+    // bridge gas token from chain1 to chain2
+    let swapTransactionResp = await Axios.get(swapUrl(chain), {
+      params: {
+        src: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+        dst: swapData.tokenAddress2,
+        amount: ethers.utils
+        .parseUnits(swapData.amount, 18)
+        .toString(),
+        from: swapData.userAddress,
+        slippage: 1, // hardcoding it for now
+        disableEstimate: true,
+      },
+      headers: {
+        accept: 'application/json',
+        Authorization: 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm',
+      },
+    });
+
+    txs.push({
+      success: true,
+      context: `This transactions would swap your gas token against ${swapData.pair[1]}.`,
+      transaction: transactions
+    });
+
+    return txs;
+  } 
+
   console.log('this is chain ', chain);
   console.log("this is swap url: ", swapUrl(chain)) 
     // swap transction
@@ -55,8 +123,8 @@ const constructNormalSwapTransaction = async (swapData) => {
     success: true,
     context: `This transactions would swap your ${swapData.amount} of matic token against ${swapData.pair[1]} token.`,
     transaction: transactions
-  };
-}
+  }
+};
 
 const constructERC20SwapTransaction = async (swapData) => {
   /**
@@ -66,6 +134,24 @@ const constructERC20SwapTransaction = async (swapData) => {
    */
 
   const chain = swapData.chain;
+
+  console.log("swapData.tokenChain1: ", swapData.tokenChain1)
+  console.log("swapData.tokenChain2: ", swapData.tokenChain2)
+
+  if (swapData.tokenChain1 && swapData.tokenChain2) {
+    console.log("=======🤡🤡🤡🤡🤡🤡🤡🤡========")
+    const txs = [];
+    const tokenChain1 = swapData.tokenChain1;
+    const tokenChain2 = swapData.tokenChain2;
+
+    // use axelar to bridge token from chain1 to chain2
+    console.log("getting bridge tx for token... ")
+    
+    // 
+    
+
+    return txs;
+  } 
 
   let transactions = [];
   console.log('this is swap data ', swapData);
@@ -105,6 +191,10 @@ const constructERC20SwapTransaction = async (swapData) => {
       slippage: 40, // hardcoding it for now
       disableEstimate: true,
       // destReceiver: swapData.userAddress
+    },
+    headers: {
+      'accept': 'application/json',
+      'Authorization': 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm'
     }
   })
 
@@ -118,6 +208,7 @@ const constructERC20SwapTransaction = async (swapData) => {
   }
 
   transactions.push(swapTxns);
+  console.log("this is transactions length: ", transactions.length)
 
   return {
     success: true,

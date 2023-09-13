@@ -164,11 +164,16 @@ const swapInfoExtractor = [
     id: 2,
     question: `From the given statement how much token user want to swap ${ONE_WORD_ANS} also also ${INFO_NOT_AVALAIBLE}`,
   },
+  {
+    id: 3,
+    question: `The given statement talks which tokens to swap. Please answer it in the form of array of string please only include the chain name into the array also ${INFO_NOT_AVALAIBLE} `,
+  },
 ];
 
 const supportedTokenSwap = [
   {
     pair: ['USDC', 'USDT'],
+    chain: [5, 137],
     'USDC': '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
     'USDT': '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'
   },
