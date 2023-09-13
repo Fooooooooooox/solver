@@ -16,7 +16,6 @@ router.get('/', async (req, res) => {
     try {
         const classifier = await getClassifier();
         const txn = await transpiler(intent, classifier, userAddress, chain);
-        console.log(txn)
         res.status(200).send({
             transactions: JSON.stringify(txn)
         })
