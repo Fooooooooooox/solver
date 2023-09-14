@@ -26,9 +26,8 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
 
   console.log('this is chain ', chain)
   console.log('this is chain ', typeof chain)
-  console.log('this is chain ', chain == 137)
+  console.log('this is chain ', chain === 137)
   const context = classifier.classify(currentStep);
-  console.log("hhhhhhh this is context: ", context)
   console.log('step context ', context);
 
   // polygon mainnet and gnosis
@@ -51,7 +50,7 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
     if(chain === "137") {
       console.log('we are here ', chain);
     swapMeta = supportedTokenSwap.filter(pair => isPairSimilar(pair.pair, swapInfo[0]));
-    // console.log('these are supportred tokens ', supportedTokenSwap);
+    console.log('these are supportred tokens ', supportedTokenSwap);
     }
     else 
     swapMeta = supportedTokenSwapGnosis.filter(pair => isPairSimilar(pair.pair, swapInfo[0]));
@@ -63,16 +62,10 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
       pair: swapMeta[0].pair,
       tokenAddress1: swapMeta[0][swapMeta[0].pair[0]],
       tokenAddress2: swapMeta[0][swapMeta[0].pair[1]],
-      tokenChain1: swapMeta[0].chain[0],
-      tokenChain2: swapMeta[0].chain[1],
       amount: swapInfo[1],
       userAddress,
       chain
     };
-
-    console.log("this is swap transaction meta ", swapTransactionMeta);
-
-    console.log('this is swap transaction meta ', swapTransactionMeta)
 
     const resp = await constructSwapTransaction(swapTransactionMeta);
     console.log(' this is resp ', resp);
@@ -160,8 +153,7 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
     let bridgeTxnResp = await contructBridgeTransactionForStaking(bridgeTransactionData);
     console.log('txn ', bridgeTxnResp);
     return { ...bridgeTxnResp, type: 'bridge' };
-  } 
+  }
 };
 
 module.exports = { transpiler }
-
