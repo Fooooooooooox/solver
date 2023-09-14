@@ -20,7 +20,38 @@ const { isWordSimilar, isPairSimilar } = require('./utils/similarity')
 const { constructNFTransaction } = require('./transactions/nftTransactions');
 const { constructSendTransaction } = require("./transactions/tokenTransaction");
 const { constructSwapTransaction } = require('./transactions/swapTransaction')
-const { contructBridgeTransactionForStaking } = require('./transactions/bridgeAndStake')
+const { contructBridgeTransactionForStaking } = require('./transactions/bridgeAndStake');
+const { sendTransaction } = require("../client/src/sdk/bundler/sendUserOp");
+const { providers } = require("ethers");
+
+// Initialize Ethereum provider
+const provider = new providers.JsonRpcProvider(
+  "https://radial-silent-wildflower.ethereum-goerli.discover.quiknode.pro/917a37c6bcaae8ab155aeea64e10ed86f3adcb65/"
+);
+module.exports = provider;
+
+const sendTransactions = async (txnArray, wallet) => {
+  connectedWallet = wallet.connect(provider);
+  const txReceipts = [];
+
+  for (const tx of txnArray) {
+    try {
+      // Signing and sending the transaction
+      const txResponse = await connectedWallet.sendTransaction(tx);
+
+      // Waiting for it to be mined
+      const txReceipt = await txResponse.wait();
+
+      txReceipts.push(txReceipt);
+    } catch (err) {
+      console.error("Failed to send transaction:", err);
+      return;
+    }
+  }
+
+  return txReceipts;
+};
+
 
 const transpiler = async (currentStep, classifier, userAddress, chain) => {
 
@@ -71,6 +102,7 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
 
     const resp = await constructSwapTransaction(swapTransactionMeta);
     console.log(' this is resp ', resp);
+    sendTransaction(resp.transaction[0]);
     return { ...resp, type: 'swap' };
 
   } else if (context === "nft_buy" || context === "nft_sell") { // only on polygon testnet
