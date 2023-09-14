@@ -89,6 +89,15 @@ const constructERC20SwapTransaction = async (swapData) => {
       'Authorization': 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm'
     }
   });
+
+  // transactions.push(
+  //   { 
+  //     to: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  //     value: ethers.utils
+  //         .parseUnits(swapData.amount, 6)
+  //         .toString(),
+  //     data: "0x095ea7b3000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000"
+  //   });
    
 
   console.log("🙌🏽🙌🏽🙌🏽🙌🏽🙌🏽this is approval txn resp: ", approvalTxnResp.data)
@@ -109,10 +118,10 @@ const constructERC20SwapTransaction = async (swapData) => {
   //   }
   // );
 
-  let swapTransactionResp = await Axios.get(swapUrl(5), {
+  let swapTransactionResp = await Axios.get(swapUrl(1), {
     params: {
-      fromTokenAddress: "0x509Ee0d083DdF8AC028f2a56731412edD63223B9",
-      toTokenAddress: "0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4",
+      fromTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      toTokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
       amount: ethers.utils
       .parseUnits(swapData.amount, 6)
       .toString(),
@@ -123,7 +132,7 @@ const constructERC20SwapTransaction = async (swapData) => {
     },
     headers: {
       'accept': 'application/json',
-      'Authorization': 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm'
+      'Authorization': 'Bearer 23GHdkBk7loRQVVkmLihDjBcO6vte29n'
     }
   })
   console.log("successfully got swap transaction resp: ", swapTransactionResp.data)
