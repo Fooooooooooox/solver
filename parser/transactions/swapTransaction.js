@@ -1,33 +1,17 @@
 const Axios = require('axios')
 const { ethers } = require('ethers')
 const SPENDER_1INCH = '0x1111111254eeb25477b68fb85ed929f73a960582' // by default approval would go to this address
-const tokenAbi = require("../abi/USDCTokenAbi.json");
 
-const approveUrl = (chain) => `https://api.1inch.dev/swap/v5.2/${chain}/approve/transaction`;
-const swapUrl = (chain) => `https://api.1inch.dev/swap/v5.2/${chain}/swap`;
-
-const {
-  AxelarQueryAPI,
-  AxelarAssetTransfer,
-  CHAINS,
-  Environment,
-} = require("@axelar-network/axelarjs-sdk");
+const approveUrl = (chain) => `https://api.1inch.io/v5.0/${chain}/approve/transaction`;
+const swapUrl = (chain) => `https://api.1inch.io/v5.0/${chain}/swap`;
 
 const isERC20 = (token) => token === 'USDC' || token === 'USDT';
-const sdk = new AxelarAssetTransfer({
-  environment: Environment.TESTNET
-});
 
 const constructSwapTransaction = (swapData) => {
-  // console.log('this is swap data', swapData);
+  console.log('this is swap data', swapData);
   const pair = swapData.pair;
 
-  console.log("hhhhhh here constructSwapTransaction: ", swapData)
-
-  if(isERC20(pair[0])) {
-    console.log("hhhhhhhh 💩💩💩💩💩💩💩💩💩")
-    return constructERC20SwapTransaction(swapData);
-  }
+  if(isERC20(pair[0])) return constructERC20SwapTransaction(swapData);
   else return constructNormalSwapTransaction(swapData);
 }
 
@@ -73,55 +57,40 @@ const constructERC20SwapTransaction = async (swapData) => {
    * 1. token pair // default to USDC and USDT
    * 2. token amount // by user
    */
+
+  const chain = swapData.chain;
+
   let transactions = [];
+  console.log('this is swap data ', swapData);
 
   // first give approval to 1inch router for the transaction
-  // todo: chain here is hardcoded to polygon
-  let approvalTxnResp = await Axios.get(approveUrl(1), {
+  let approvalTxnResp = await Axios.get(approveUrl(chain), {
     params: {
-      tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      tokenAddress: swapData.tokenAddress1,
       amount: ethers.utils
       .parseUnits(swapData.amount, 6)
       .toString()
-    },
-    headers: {
-      'accept': 'application/json',
-      'Authorization': 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm'
     }
   });
 
-  // transactions.push(
-  //   { 
-  //     to: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-  //     value: ethers.utils
-  //         .parseUnits(swapData.amount, 6)
-  //         .toString(),
-  //     data: "0x095ea7b3000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000"
-  //   });
-   
-
-  console.log("🙌🏽🙌🏽🙌🏽🙌🏽🙌🏽this is approval txn resp: ", approvalTxnResp.data)
-  transactions.push(
-    {
-      to: approvalTxnResp.data.to,
-      value: approvalTxnResp.data.value,
-      data: approvalTxnResp.data.data,
-      gasPrice: approvalTxnResp.data.gasPrice
-    }
-  );
-
-  // transactions.push(
-  //   {
-  //     to: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-  //     value: 0,
-  //     data: "0x095ea7b3000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000003635c9adc5dea00000"
-  //   }
-  // );
-
-  let swapTransactionResp = await Axios.get(swapUrl(1), {
+  transactions.push(approvalTxnResp.data);
+  // console.log(approvalTxnResp.data);
+  console.log('these are params ', {
+    fromTokenAddress: swapData.tokenAddress1,
+    toTokenAddress: swapData.tokenAddress2,
+    amount: ethers.utils
+    .parseUnits(swapData.amount, 6)
+    .toString(),
+    fromAddress: swapData.userAddress,
+    slippage: 40, // hardcoding it for now
+    disableEstimate: true,
+    // destReceiver: swapData.userAddress
+  })
+  // swap transction
+  let swapTransactionResp = await Axios.get(swapUrl(chain), {
     params: {
-      fromTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      toTokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      fromTokenAddress: swapData.tokenAddress1,
+      toTokenAddress: swapData.tokenAddress2,
       amount: ethers.utils
       .parseUnits(swapData.amount, 6)
       .toString(),
@@ -129,13 +98,8 @@ const constructERC20SwapTransaction = async (swapData) => {
       slippage: 40, // hardcoding it for now
       disableEstimate: true,
       // destReceiver: swapData.userAddress
-    },
-    headers: {
-      'accept': 'application/json',
-      'Authorization': 'Bearer 23GHdkBk7loRQVVkmLihDjBcO6vte29n'
     }
   })
-  console.log("successfully got swap transaction resp: ", swapTransactionResp.data)
 
   console.log(swapTransactionResp)
 
@@ -146,53 +110,13 @@ const constructERC20SwapTransaction = async (swapData) => {
     gasPrice: swapTransactionResp.data.tx.gasPrice
   }
 
-  console.log("====adding swap txns: ", swapTxns)
   transactions.push(swapTxns);
-  console.log("this is transactions length: ", transactions.length)
 
-  // transactions.push({ 
-  //   success: true,
-  //   context: `The first transaction would take approval for ${swapData.amount} of ${swapData.pair[0]} token and then it would swap ${swapData.amount} of ${swapData.pair[0]} token for best rates`,
-  //   transaction: transactions
-  // })
-
-
-  console.log("swapData.tokenChain1: ", swapData.tokenChain1)
-  console.log("swapData.tokenChain2: ", swapData.tokenChain2)
-
-  // if cross chain add a bridge transaction
-  if (swapData.tokenChain1 && swapData.tokenChain2) {
-    console.log("=======🤡🤡🤡🤡🤡🤡🤡🤡======== adding cross chain tx")
-    const tokenChain1 = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-    const tokenChain2 = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
-    // use axelar to bridge token from chain1 to chain2
-    console.log("getting bridge tx for token... ")
-    
-    const fromChain = CHAINS.TESTNET.ETHEREUM,
-    toChain = CHAINS.TESTNET.OPTIMISM,
-    destinationAddress = "0xb15115A15d5992A756D003AE74C0b832918fAb75",
-    asset = "uausdc";  // denom of asset. See note (2) below
-
-    const depositAddress = await sdk.getDepositAddress({
-        fromChain,
-        toChain,
-        destinationAddress,
-        asset
-    });
-    console.log("this is deposit address: ", destinationAddress)
-    // note: next swap should wait util the bridge is done(bundler should do the check)
-    // form a send transaction to the deposit address
-    const transferCode = new ethers.utils.Interface(tokenAbi).encodeFunctionData('transfer', [destinationAddress, ethers.utils.parseEther(swapData.amount)])
-    transactions.push({
-      to: depositAddress,
-      data: transferCode,
-      value: 0
-    });
-
-  } 
-  return transactions;
-  // swap transaction
-
+  return {
+    success: true,
+    context: `The first transaction would take approval for ${swapData.amount} of ${swapData.pair[0]} token and then it would swap ${swapData.amount} of ${swapData.pair[0]} token for best rates`,
+    transaction: transactions
+  }
 }
 
 module.exports = { constructSwapTransaction }
