@@ -3,7 +3,7 @@ const { ethers } = require('ethers')
 const SPENDER_1INCH = '0x1111111254eeb25477b68fb85ed929f73a960582' // by default approval would go to this address
 const tokenAbi = require("../abi/USDCTokenAbi.json");
 
-const approveUrl = (chain) => `https://api.1inch.io/v5.0/${chain}/approve/transaction`;
+const approveUrl = (chain) => `https://api.1inch.dev/swap/v5.2/${chain}/approve/transaction`;
 const swapUrl = (chain) => `https://api.1inch.dev/swap/v5.2/${chain}/swap`;
 
 const {
@@ -33,87 +33,22 @@ const constructSwapTransaction = (swapData) => {
 
 const constructNormalSwapTransaction = async (swapData) => {
   let transactions = [];
-  console.log("swapData.tokenChain1: ", swapData.tokenChain1)
-  console.log("swapData.tokenChain2: ", swapData.tokenChain2)
 
-  if (swapData.tokenChain1 && swapData.tokenChain2) {
-    console.log("=======🤯🤯🤯🤯🤯🤯========")
-    const txs = [];
-    const tokenChain1 = swapData.tokenChain1;
-    const tokenChain2 = swapData.tokenChain2;
-
-    // swap token on chain 1 first
-    let swapTransactionResp1 = await Axios.get(swapUrl(5), {
-      params: {
-        src: "0x2f3A40A3db8a7e3D09B0adfEfbCe4f6F81927557",
-        dst: "0x509Ee0d083DdF8AC028f2a56731412edD63223B9",
-        amount: ethers.utils
-        .parseUnits(swapData.amount, 18)
-        .toString(),
-        from: swapData.userAddress,
-        slippage: 1, // hardcoding it for now
-        disableEstimate: true,
-      },
-      headers: {
-        accept: 'application/json',
-        Authorization: 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm',
-      },
-    });
-    // console.log("here we are , this is swapTransactionResp data: ", swapTransactionResp.data)
-  
-    const swapTxn = {
-      to: swapTransactionResp1.data.tx.to,
-      value: swapTransactionResp1.data.tx.value,
-      data: swapTransactionResp1.data.tx.data
-    }
-  
-    transactions.push(swapTxn);
-    
-    // bridge token2 from chain1 to chain2
-    // get deposit address
-    const fromChain = CHAINS.TESTNET.ETHEREUM;
-    const toChain = CHAINS.TESTNET.OPTIMISM;
-    const destinationAddress = swapData.userAddress;
-    asset = "uausdc";  // denom of asset. See note (2) below
-    fromTokenAddress = "0x254d06f33bDc5b8ee05b2ea472107E300226659A"
-    const depositAddress = await sdk.getDepositAddress({
-      fromChain,
-      toChain,
-      destinationAddress,
-      asset
-    });
-
-    console.log("this is deposit: ", depositAddress)
-    // form a send transaction to the deposit address
-    const transferCode = new ethers.utils.Interface(tokenAbi).encodeFunctionData('transfer', [depositAddress, ethers.utils.parseEther(swapData.amount)])
-    transactions.push({
-      to: depositAddress,
-      data: transferCode,
-      value: 0
-    });
-    return txs;
-  } 
-
-  console.log('this is chain ', chain);
-  console.log("this is swap url: ", swapUrl(chain)) 
+  const chain = swapData.chain;
     // swap transction
   let swapTransactionResp = await Axios.get(swapUrl(chain), {
     params: {
-      src: swapData.tokenAddress1,
-      dst: swapData.tokenAddress2,
+      fromTokenAddress: swapData.tokenAddress1,
+      toTokenAddress: swapData.tokenAddress2,
       amount: ethers.utils
       .parseUnits(swapData.amount, 18)
       .toString(),
-      from: swapData.userAddress,
-      slippage: 1, // hardcoding it for now
+      fromAddress: swapData.userAddress,
+      slippage: 5, // hardcoding it for now
       disableEstimate: true,
-    },
-    headers: {
-      accept: 'application/json',
-      Authorization: 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm',
-    },
+      destReceiver: swapData.userAddress
+    }
   });
-  // console.log("here we are , this is swapTransactionResp data: ", swapTransactionResp.data)
 
   const swapTxn = {
     to: swapTransactionResp.data.tx.to,
@@ -122,16 +57,15 @@ const constructNormalSwapTransaction = async (swapData) => {
   }
 
   transactions.push(swapTxn);
-  console.log("this is transactions: ", transactions)
 
-  console.log("thesre are txns ", transactions)
+  console.log('thesre are txns ', transactions)
 
   return {
     success: true,
     context: `This transactions would swap your ${swapData.amount} of matic token against ${swapData.pair[1]} token.`,
     transaction: transactions
-  }
-};
+  };
+}
 
 const constructERC20SwapTransaction = async (swapData) => {
   /**
@@ -145,34 +79,40 @@ const constructERC20SwapTransaction = async (swapData) => {
   // todo: chain here is hardcoded to polygon
   let approvalTxnResp = await Axios.get(approveUrl(1), {
     params: {
-      tokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       amount: ethers.utils
       .parseUnits(swapData.amount, 6)
       .toString()
+    },
+    headers: {
+      'accept': 'application/json',
+      'Authorization': 'Bearer RVGJIAYSkmSHXtIHVbSYls52MMCZu6sm'
     }
   });
+   
 
-  console.log("this is approval txn resp: ", approvalTxnResp.data)
-  // transactions.push(
-  //   {
-  //     to: approvalTxnResp.data.tx.to,
-  //     value: approvalTxnResp.data.tx.value,
-  //     data: approvalTxnResp.data.tx.data
-  //   }
-  // );
-
+  console.log("🙌🏽🙌🏽🙌🏽🙌🏽🙌🏽this is approval txn resp: ", approvalTxnResp.data)
   transactions.push(
     {
-      to: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      value: 0,
-      data: "0x095ea7b3000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000003635c9adc5dea00000"
+      to: approvalTxnResp.data.to,
+      value: approvalTxnResp.data.value,
+      data: approvalTxnResp.data.data,
+      gasPrice: approvalTxnResp.data.gasPrice
     }
   );
 
-  let swapTransactionResp = await Axios.get(swapUrl(1), {
+  // transactions.push(
+  //   {
+  //     to: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  //     value: 0,
+  //     data: "0x095ea7b3000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000003635c9adc5dea00000"
+  //   }
+  // );
+
+  let swapTransactionResp = await Axios.get(swapUrl(5), {
     params: {
-      fromTokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-      toTokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      fromTokenAddress: "0x509Ee0d083DdF8AC028f2a56731412edD63223B9",
+      toTokenAddress: "0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4",
       amount: ethers.utils
       .parseUnits(swapData.amount, 6)
       .toString(),
